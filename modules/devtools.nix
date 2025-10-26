@@ -3,6 +3,7 @@
 {
   environment.systemPackages = with pkgs; [
     git
+    openssh
     dig
     neovim
     neofetch

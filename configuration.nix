@@ -8,6 +8,7 @@
     ./modules/docker.nix
     ./modules/devtools.nix
     ./configs/git.nix
+    ./configs/nvim.nix
   ];
 
   networking = {
