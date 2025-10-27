@@ -2,6 +2,14 @@
 
 {
   environment.systemPackages = with pkgs; [
+    zsh
+    zip
+    xz
+    p7zip
+    unzip
+    ripgrep
+    fzf # A command-line fuzzy finder 
+    nload
     git
     openssh
     dig
@@ -12,7 +20,6 @@
     htop
     tmux
     tree
-    unzip
     gcc
     gnumake
     go
