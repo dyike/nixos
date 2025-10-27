@@ -3,6 +3,8 @@
 {
   environment.systemPackages = with pkgs; [
     zsh
+    zsh-autosuggestions
+    zsh-syntax-highlighting
     zip
     xz
     p7zip
@@ -10,6 +12,7 @@
     ripgrep
     fzf # A command-line fuzzy finder 
     nload
+    iperf3
     git
     openssh
     dig
@@ -22,8 +25,14 @@
     tree
     gcc
     gnumake
-    go
     nodejs_20
+    yarn
+    pnpm
     python3
+    rustup
+    go
+    gopls
+    delve
+    golangci-lint
   ];
 }

@@ -9,6 +9,7 @@
     ./modules/devtools.nix
     ./configs/git.nix
     ./configs/nvim.nix
+    ./configs/zsh.nix
   ];
 
   networking = {
