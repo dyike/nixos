@@ -23,6 +23,7 @@
     htop
     tmux
     tree
+    tcpdump
     gcc
     gnumake
     nodejs_20
