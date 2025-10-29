@@ -7,6 +7,15 @@
     firewall.enable = false;
   };
 
+  services.resolved = {
+    enable = true;
+    extraConfig = ''
+      DNS=192.168.5.3 223.5.5.5
+      FallbackDNS=114.114.114.114 8.8.8.8 8.8.4.4
+      Domains=~.
+    '';
+  };
+
   systemd.network = {
     enable = true;
 
@@ -43,17 +52,49 @@
       networkConfig = {
         DHCP = "yes";   # 或者改成 StaticAddress = [ "192.168.5.xxx/24" ];
       };
+      dhcpConfig = {
+        UseDNS = false;
+        USeRoutes = true;
+      };
       routes = [
         { Gateway = "192.168.5.253"; Metric = 100; }
       ];
     };
   };
 
-  boot.kernelModules = [ "bonding" ];
+  boot.kernelModules = [ "bonding" "macvlan" ];
 
   boot.kernel.sysctl = {
     "net.ipv4.conf.all.arp_filter" = 1;
     "net.ipv4.conf.all.arp_announce" = 2;
   };
+
+  systemd.services.macvlan-shim = {
+    description = "Create macvlan-shim interface for Docker macvlan bridge access";
+    after = [ "network-online.target" "systemd-networkd.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = pkgs.writeShellScript "macvlan-shim-start" ''
+        set -e
+        ${pkgs.iproute2}/bin/ip link del macvlan-shim 2>/dev/null || true
+        ${pkgs.iproute2}/bin/ip link set bond0 promisc on
+        ${pkgs.iproute2}/bin/ip link add macvlan-shim link bond0 type macvlan mode bridge
+        ${pkgs.iproute2}/bin/ip addr add 192.168.5.252/32 dev macvlan-shim
+        ${pkgs.iproute2}/bin/ip link set macvlan-shim up
+        ${pkgs.iproute2}/bin/ip route add 192.168.5.3/32 dev macvlan-shim || true
+        ${pkgs.iproute2}/bin/ip route add 192.168.5.4/32 dev macvlan-shim || true
+        ${pkgs.iproute2}/bin/ip route add 192.168.5.5/32 dev macvlan-shim || true
+        ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.all.proxy_arp=1
+        ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.bond0.proxy_arp=1
+        ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.macvlan-shim.proxy_arp=1
+      '';
+      ExecStop = pkgs.writeShellScript "macvlan-shim-stop" ''
+        ${pkgs.iproute2}/bin/ip link del macvlan-shim || true
+      '';
+    };
+  };
+
 }
 
