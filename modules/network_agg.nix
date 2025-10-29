@@ -11,7 +11,7 @@
     enable = true;
     extraConfig = ''
       DNS=192.168.5.3 223.5.5.5
-      FallbackDNS=114.114.114.114 8.8.8.8 8.8.4.4
+      FallbackDNS=114.114.114.114
       Domains=~.
     '';
   };
@@ -54,7 +54,7 @@
       };
       dhcpConfig = {
         UseDNS = false;
-        USeRoutes = true;
+        UseRoutes = true;
       };
       routes = [
         { Gateway = "192.168.5.253"; Metric = 100; }
@@ -96,5 +96,39 @@
     };
   };
 
+  systemd.timers.dns-health-check = {
+    description = "Periodic DNS health check";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "1min";
+      OnUnitActiveSec = "30s";  # 每30秒检查一次
+      AccuracySec = "5s";
+    };
+  };
+
+  systemd.services.dns-health-check = {
+    description = "Check and restore primary DNS if available";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "dns-health-check" ''
+        PRIMARY="192.168.5.3"
+        
+        # 获取当前使用的 DNS
+        CURRENT=$(${pkgs.systemd}/bin/resolvectl status | grep "Current DNS Server:" | head -1 | awk '{print $4}')
+        
+        # 如果当前不是主 DNS，检查主 DNS 是否恢复
+        if [ "$CURRENT" != "$PRIMARY" ]; then
+          if ${pkgs.iputils}/bin/ping -c 1 -W 2 $PRIMARY >/dev/null 2>&1; then
+            echo "Primary DNS $PRIMARY is back online, resetting resolved..."
+            ${pkgs.systemd}/bin/resolvectl flush-caches
+            ${pkgs.systemd}/bin/resolvectl reset-server-features
+            # 强制重新评估 DNS 服务器
+            sleep 1
+            ${pkgs.systemd}/bin/systemctl restart systemd-resolved
+          fi
+        fi
+      '';
+    };
+  };
 }
 
