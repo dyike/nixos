@@ -19,56 +19,40 @@
   systemd.network = {
     enable = true;
 
-    # 定义聚合接口 bond0
-    netdevs."bond0" = {
-      netdevConfig = {
-        Name = "bond0";
-        Kind = "bond";
-      };
-      bondConfig = {
-        Mode = "802.3ad";      # LACP 聚合模式
-        MIIMonitorSec = "1s";  # 链路检测间隔
-        LACPTransmitRate = "fast";
-        # TransmitHashPolicy 字段对 systemd-networkd 支持会因版本不同略有差异，
-        # 如果此字段无效，可以在 /etc/modprobe.d/ 或内核参数调整：
-        TransmitHashPolicy = "layer3+4";
-      };
-    };
-
-    # 将物理接口 enp11s0 / enp12s0 加入 bond0
+    # 第一张网卡
     networks."10-enp11s0" = {
       matchConfig.Name = "enp11s0";
-      networkConfig.Bond = "bond0";
+      networkConfig = {
+        DHCP = "yes";
+      };
+      dhcpConfig = {
+        UseDNS = false;   # 不使用DHCP下发的DNS
+        UseRoutes = true; # 使用默认路由
+      };
+      routes = [
+        { Gateway = "192.168.5.253"; Metric = 100; }
+      ];
     };
 
+    # 第二张网卡（作为备用，可以同样配置）
     networks."10-enp12s0" = {
       matchConfig.Name = "enp12s0";
-      networkConfig.Bond = "bond0";
-    };
-
-    # 配置 bond0 的 IP / 路由
-    networks."20-bond0" = {
-      matchConfig.Name = "bond0";
       networkConfig = {
-        DHCP = "yes";   # 或者改成 StaticAddress = [ "192.168.5.xxx/24" ];
+        DHCP = "yes";
       };
       dhcpConfig = {
         UseDNS = false;
         UseRoutes = true;
       };
       routes = [
-        { Gateway = "192.168.5.253"; Metric = 100; }
+        { Gateway = "192.168.5.253"; Metric = 200; } # 高metric表示备份
       ];
     };
   };
 
-  boot.kernelModules = [ "bonding" "macvlan" ];
+  boot.kernelModules = [ "macvlan" ];
 
-  boot.kernel.sysctl = {
-    "net.ipv4.conf.all.arp_filter" = 1;
-    "net.ipv4.conf.all.arp_announce" = 2;
-  };
-
+  # 保留 macvlan shim 逻辑
   systemd.services.macvlan-shim = {
     description = "Create macvlan-shim interface for Docker macvlan bridge access";
     after = [ "network-online.target" "systemd-networkd.service" ];
@@ -79,15 +63,15 @@
       ExecStart = pkgs.writeShellScript "macvlan-shim-start" ''
         set -e
         ${pkgs.iproute2}/bin/ip link del macvlan-shim 2>/dev/null || true
-        ${pkgs.iproute2}/bin/ip link set bond0 promisc on
-        ${pkgs.iproute2}/bin/ip link add macvlan-shim link bond0 type macvlan mode bridge
+        ${pkgs.iproute2}/bin/ip link set enp11s0 promisc on
+        ${pkgs.iproute2}/bin/ip link add macvlan-shim link enp11s0 type macvlan mode bridge
         ${pkgs.iproute2}/bin/ip addr add 192.168.5.252/32 dev macvlan-shim
         ${pkgs.iproute2}/bin/ip link set macvlan-shim up
         ${pkgs.iproute2}/bin/ip route add 192.168.5.3/32 dev macvlan-shim || true
         ${pkgs.iproute2}/bin/ip route add 192.168.5.4/32 dev macvlan-shim || true
         ${pkgs.iproute2}/bin/ip route add 192.168.5.5/32 dev macvlan-shim || true
         ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.all.proxy_arp=1
-        ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.bond0.proxy_arp=1
+        ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.enp11s0.proxy_arp=1
         ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.macvlan-shim.proxy_arp=1
       '';
       ExecStop = pkgs.writeShellScript "macvlan-shim-stop" ''
@@ -96,12 +80,13 @@
     };
   };
 
+  # DNS 健康检测逻辑保留
   systemd.timers.dns-health-check = {
     description = "Periodic DNS health check";
     wantedBy = [ "timers.target" ];
     timerConfig = {
       OnBootSec = "1min";
-      OnUnitActiveSec = "30s";  # 每30秒检查一次
+      OnUnitActiveSec = "30s";
       AccuracySec = "5s";
     };
   };
@@ -112,17 +97,12 @@
       Type = "oneshot";
       ExecStart = pkgs.writeShellScript "dns-health-check" ''
         PRIMARY="192.168.5.3"
-        
-        # 获取当前使用的 DNS
         CURRENT=$(${pkgs.systemd}/bin/resolvectl status | grep "Current DNS Server:" | head -1 | awk '{print $4}')
-        
-        # 如果当前不是主 DNS，检查主 DNS 是否恢复
         if [ "$CURRENT" != "$PRIMARY" ]; then
           if ${pkgs.iputils}/bin/ping -c 1 -W 2 $PRIMARY >/dev/null 2>&1; then
             echo "Primary DNS $PRIMARY is back online, resetting resolved..."
             ${pkgs.systemd}/bin/resolvectl flush-caches
             ${pkgs.systemd}/bin/resolvectl reset-server-features
-            # 强制重新评估 DNS 服务器
             sleep 1
             ${pkgs.systemd}/bin/systemctl restart systemd-resolved
           fi
@@ -131,4 +111,3 @@
     };
   };
 }
-
