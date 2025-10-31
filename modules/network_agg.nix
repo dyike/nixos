@@ -63,15 +63,15 @@
       ExecStart = pkgs.writeShellScript "macvlan-shim-start" ''
         set -e
         ${pkgs.iproute2}/bin/ip link del macvlan-shim 2>/dev/null || true
-        ${pkgs.iproute2}/bin/ip link set enp11s0 promisc on
-        ${pkgs.iproute2}/bin/ip link add macvlan-shim link enp11s0 type macvlan mode bridge
+        ${pkgs.iproute2}/bin/ip link set enp12s0 promisc on
+        ${pkgs.iproute2}/bin/ip link add macvlan-shim link enp12s0 type macvlan mode bridge
         ${pkgs.iproute2}/bin/ip addr add 192.168.5.252/32 dev macvlan-shim
         ${pkgs.iproute2}/bin/ip link set macvlan-shim up
         ${pkgs.iproute2}/bin/ip route add 192.168.5.3/32 dev macvlan-shim || true
         ${pkgs.iproute2}/bin/ip route add 192.168.5.4/32 dev macvlan-shim || true
         ${pkgs.iproute2}/bin/ip route add 192.168.5.5/32 dev macvlan-shim || true
         ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.all.proxy_arp=1
-        ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.enp11s0.proxy_arp=1
+        ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.enp12s0.proxy_arp=1
         ${pkgs.procps}/bin/sysctl -w net.ipv4.conf.macvlan-shim.proxy_arp=1
       '';
       ExecStop = pkgs.writeShellScript "macvlan-shim-stop" ''
