@@ -12,6 +12,7 @@
     ripgrep
     fzf # A command-line fuzzy finder 
     nload
+    chafa
     iperf3
     git
     openssh
