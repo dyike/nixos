@@ -3,7 +3,10 @@
 {
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = 1;
+    "net.ipv4.conf.all.route_localnet" = 1;
+    "net.ipv4.conf.default.route_localnet" = 1;
   };
+  boot.kernelModules = [ "wireguard" "iptable_nat" "ip6table_nat" ];
   
   networking = {
     hostName = "x-homelab";
@@ -20,20 +23,19 @@
       Domains=~.
     '';
   };
-  # 使用 lib.mkForce 强制覆盖 resolv.conf
-  # environment.etc."resolv.conf".text = lib.mkForce ''
-  #   nameserver 127.0.0.1
-  #   nameserver 223.5.5.5
-  #   nameserver 114.114.114.114
-  # '';
 
-  # 使用 iptables 将 53 端口重定向到 5300
-  # networking.firewall.extraCommands = ''
-  #   iptables -t nat -A PREROUTING -p udp --dport 53 -j REDIRECT --to-port 5300
-  #   iptables -t nat -A PREROUTING -p tcp --dport 53 -j REDIRECT --to-port 5300
-  #   iptables -t nat -A OUTPUT -p udp -d 127.0.0.1 --dport 53 -j REDIRECT --to-port 5300
-  #   iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport 53 -j REDIRECT --to-port 5300
-  # '';
+  systemd.services.wg-wan2-route = {
+    description = "WireGuard WAN2 policy routing setup";
+    after = [ "network-online.target" "docker.service" ];
+    wants = [ "network-online.target" "docker.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "/data/app/moni/wireguard/ct-wan/wg-wan2-ct-route.sh";
+      Environment = "PATH=/run/current-system/sw/bin:/run/wrappers/bin";
+    };
+    wantedBy = [ "multi-user.target" ];
+  };
+
 
   systemd.network = {
     enable = true;

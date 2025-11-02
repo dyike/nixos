@@ -14,6 +14,9 @@
     nload
     chafa
     iperf3
+    iptables
+    iproute2
+    procps
     git
     openssh
     dig
