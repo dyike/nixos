@@ -1,6 +1,9 @@
 { config, pkgs, ... }:
 
 {
+  environment.extraInit = ''
+    export PATH="$HOME/.yarn/bin:$PATH"
+  '';
   programs.zsh = {
     enable = true;
     enableCompletion = true;
