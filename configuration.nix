@@ -6,7 +6,6 @@
     ./modules/system.nix
     ./modules/network_fixed.nix
     # ./modules/network.nix
-    # ./modules/network_agg.nix
     ./modules/users.nix
     ./modules/docker.nix
     ./modules/devtools.nix
