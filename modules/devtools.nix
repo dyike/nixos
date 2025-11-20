@@ -13,6 +13,7 @@
     fzf # A command-line fuzzy finder 
     nload
     chafa
+    ffmpeg-full
     iperf3
     iptables
     iproute2
