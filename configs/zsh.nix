@@ -16,11 +16,14 @@
     promptInit = ''
       cat <<'EOF' > ~/.zsh_nix_prompt
       autoload -Uz vcs_info
-      zstyle ':vcs_info:git:*' formats '%b'
-      zstyle ':vcs_info:git:*' actionformats '%b|%a'
+      setopt prompt_subst
+      
+      zstyle ':vcs_info:*' enable git
+      zstyle ':vcs_info:git:*' formats ' %b'
+      zstyle ':vcs_info:git:*' actionformats ' %b|%a'
       
       function git_dirty() {
-        if git rev-parse --is-inside-work-tree &>/dev/null; then
+        if git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
           if ! git diff --quiet --ignore-submodules HEAD 2>/dev/null; then
             echo " ✗"
           fi
@@ -35,11 +38,11 @@
       RESET="%f"
       GIT_ICON=""
       
-      precmd() { vcs_info; }
+      precmd() { 
+        vcs_info
+      }
       
-      setopt PROMPT_SUBST
-      
-      PS1="''${GRAY}%T ''${BLUE}%~''${MAGENTA}''${vcs_info_msg_0_:+ ''${GIT_ICON}$vcs_info_msg_0_}''${RED}''${vcs_info_msg_0_:+$(git_dirty)}''${RESET} ''${GREEN}❯''${RESET} "
+      PS1="''${GRAY}%T ''${BLUE}%~''${MAGENTA}''${GIT_ICON}\$vcs_info_msg_0_''${RED}\$(git_dirty)''${RESET} ''${GREEN}❯''${RESET} "
       EOF
       
       source ~/.zsh_nix_prompt
