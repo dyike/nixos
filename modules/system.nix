@@ -9,5 +9,9 @@
 
   nix.gc.automatic = true;
   nix.gc.dates = "weekly";
-  zramSwap.enable = true;
+  zramSwap = {
+      enable = true;
+      algorithm = "zstd";
+      memoryPercent = 20;
+  };
 }

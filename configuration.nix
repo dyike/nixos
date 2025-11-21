@@ -17,6 +17,7 @@
   users.users.yuanfeng = {
     isNormalUser = true;
     extraGroups = [ "wheel" "docker" ];
+    shell = pkgs.zsh;
   };
 
   services.openssh.enable = true;
