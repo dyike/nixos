@@ -3,6 +3,7 @@
 {
   environment.systemPackages = with pkgs; [
     zsh
+    zsh-completions
     zsh-autosuggestions
     zsh-syntax-highlighting
     zip
@@ -19,6 +20,7 @@
     iproute2
     procps
     git
+    git-credential-manager
     openssh
     dig
     neovim

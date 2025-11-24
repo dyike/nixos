@@ -9,7 +9,10 @@
     autosuggestions.enable = true;
     syntaxHighlighting.enable = true;
     enableGlobalCompInit = false;
+
     interactiveShellInit = ''
+      autoload -Uz compinit
+      compinit
       # 防止 zsh-newuser-install
       touch ~/.zshrc
     '';
