@@ -12,6 +12,7 @@
     ./configs/git.nix
     ./configs/nvim.nix
     ./configs/zsh.nix
+    ./configs/npm.nix
   ];
 
   users.users.yuanfeng = {
