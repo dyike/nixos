@@ -25,6 +25,10 @@
     dig
     neovim
     neofetch
+    libxkbcommon
+    xorg.libxcb
+    xorg.libX11
+    vulkan-loader
     curl
     wget
     htop
@@ -43,4 +47,11 @@
     delve
     golangci-lint
   ];
+
+  environment.variables = {
+    LIBRARY_PATH = "/run/current-system/sw/lib";
+    LD_LIBRARY_PATH = "/run/current-system/sw/lib";
+    PKG_CONFIG_PATH = "/run/current-system/sw/lib/pkgconfig:/run/current-system/sw/share/pkgconfig";
+  };
+
 }
