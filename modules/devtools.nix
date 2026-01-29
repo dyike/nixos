@@ -37,7 +37,7 @@
     tcpdump
     gcc
     gnumake
-    nodejs_20
+    nodejs_22
     yarn
     pnpm
     python3
