@@ -14,16 +14,6 @@
     firewall.enable = false;
   };
 
-  services.resolved = {
-    enable = true;
-    extraConfig = ''
-      DNSStubListener=no
-      DNS=127.0.0.1
-      FallbackDNS=223.5.5.5 114.114.114.114
-      Domains=~.
-    '';
-  };
-
   systemd.services.wg-wan2-route = {
     description = "WireGuard WAN2 policy routing setup";
     after = [ "network-online.target" "docker.service" ];
@@ -45,26 +35,22 @@
         networkConfig = {
           Address = "192.168.5.1/24";
           Gateway = "192.168.5.253";  # 添加到主路由表
+          DHCP = "ipv4";
+          # 告诉系统，即使 DHCP 给了 IP，也要优先用我上面写的静态 Address
+          IPv4LLRoute = false;
         };
-        routes = [
-          { Gateway = "192.168.5.253"; Table = 100; Metric = 100; }
-        ];
-        routingPolicyRules = [
-          { Priority = 100; From = "192.168.5.1/32"; Table = 100; }
-        ];
+        # 确保 DHCP 获取到的 DNS 能够被注册到全局
+        dhcpV4Config = {
+          UseDNS = true;
+          UseRoutes = false; # 只想要它的 DNS，不想要它乱改我的默认网关
+        };
       };
 
       "10-enp12s0" = {
         matchConfig.Name = "enp12s0";
         networkConfig = {
-          Address = "192.168.5.2/24";
+          Address = "192.168.5.4/24";
         };
-        routes = [
-          { Gateway = "192.168.5.253"; Table = 101; Metric = 100; }
-        ];
-        routingPolicyRules = [
-          { Priority = 100; From = "192.168.5.2/32"; Table = 101; }
-        ];
       };
     };
   };
