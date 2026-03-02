@@ -36,6 +36,7 @@
     tree
     tcpdump
     gcc
+    cmake
     gnumake
     nodejs_22
     yarn
@@ -46,12 +47,17 @@
     gopls
     delve
     golangci-lint
+    pkg-config
+    openssl
+    openssl.dev
   ];
 
   environment.variables = {
     LIBRARY_PATH = "/run/current-system/sw/lib";
     LD_LIBRARY_PATH = "/run/current-system/sw/lib";
+    OPENSSL_DIR = "${pkgs.openssl.dev}";
+    OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
+    OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
     PKG_CONFIG_PATH = "/run/current-system/sw/lib/pkgconfig:/run/current-system/sw/share/pkgconfig";
   };
-
 }
