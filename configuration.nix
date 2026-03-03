@@ -9,6 +9,7 @@
     ./modules/users.nix
     ./modules/docker.nix
     ./modules/devtools.nix
+    ./modules/playwright.nix
     ./configs/git.nix
     ./configs/nvim.nix
     ./configs/zsh.nix

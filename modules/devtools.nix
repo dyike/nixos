@@ -1,6 +1,20 @@
 { pkgs, ... }:
 
 {
+  # 1. Enable nix-ld to run unpatched binaries
+  programs.nix-ld.enable = true;
+  programs.nix-ld.libraries = with pkgs; [
+    # Most common libraries for VS Code / Node.js environments
+    stdenv.cc.cc
+    zlib
+    fuse3
+    icu
+    nss
+    openssl
+    curl
+    expat
+    # Add any others you find are missing
+  ];
   environment.systemPackages = with pkgs; [
     zsh
     zsh-completions
@@ -50,11 +64,11 @@
     pkg-config
     openssl
     openssl.dev
+    procps
   ];
 
   environment.variables = {
     LIBRARY_PATH = "/run/current-system/sw/lib";
-    LD_LIBRARY_PATH = "/run/current-system/sw/lib";
     OPENSSL_DIR = "${pkgs.openssl.dev}";
     OPENSSL_LIB_DIR = "${pkgs.openssl.out}/lib";
     OPENSSL_INCLUDE_DIR = "${pkgs.openssl.dev}/include";
